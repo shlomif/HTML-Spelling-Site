@@ -1,5 +1,8 @@
 Revision history for HTML-Spelling-Site
 
+v0.0.3      2016-03-12
+    - Improve the POD documentation.
+
 v0.0.2      2016-03-12
     - Made the minimal version of perl 5.14.x to avoid CPAN testers' failures
     on perl-5.8.9. E.g.:
