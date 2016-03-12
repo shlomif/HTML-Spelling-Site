@@ -181,7 +181,122 @@ HTML::Spelling::Site::Checker - does the actual checking.
 
 =head1 SYNOPSIS
 
-    TODO - FILL IN.
+In lib/Shlomif/Spelling/Whitelist.pm :
+
+    package Shlomif::Spelling::Whitelist;
+
+    use strict;
+    use warnings;
+
+    use MooX qw/late/;
+
+    extends('HTML::Spelling::Site::Whitelist');
+
+    has '+filename' => (default => 'lib/hunspell/whitelist1.txt');
+
+    1;
+
+In lib/Shlomif/Spelling/Check.pm :
+
+    package Shlomif::Spelling::Check;
+
+    use strict;
+    use warnings;
+    use autodie;
+    use utf8;
+
+    use MooX qw/late/;
+
+    use Text::Hunspell;
+    use Shlomif::Spelling::Whitelist;
+    use HTML::Spelling::Site::Checker;
+
+    sub spell_check
+    {
+        my ($self, $args) = @_;
+
+        my $speller = Text::Hunspell->new(
+            '/usr/share/hunspell/en_GB.aff',
+            '/usr/share/hunspell/en_GB.dic',
+        );
+
+        if (not $speller)
+        {
+            die "Could not initialize speller!";
+        }
+
+        my $files = $args->{files};
+
+        return HTML::Spelling::Site::Checker->new(
+            {
+                timestamp_cache_fn => './Tests/data/cache/spelling-timestamp.json',
+                whitelist_parser => scalar( Shlomif::Spelling::Whitelist->new() ),
+                check_word_cb => sub {
+                    my ($word) = @_;
+                    return $speller->check($word);
+                },
+            }
+        )->spell_check(
+            {
+                files => $args->{files}
+            }
+        );
+    }
+
+    1;
+
+In lib/Shlomif/Spelling/Iface.pm :
+
+    package Shlomif::Spelling::Iface;
+
+    use strict;
+    use warnings;
+
+    use MooX (qw( late ));
+
+    use Shlomif::Spelling::Check;
+    use Shlomif::Spelling::FindFiles;
+
+    sub run
+    {
+        return Shlomif::Spelling::Check->new()->spell_check(
+            {
+                files => Shlomif::Spelling::FindFiles->new->list_htmls(),
+            },
+        );
+    }
+
+    1;
+
+In bin/spell-checker-iface :
+
+    #!/usr/bin/env perl
+
+    use strict;
+    use warnings;
+
+    use lib './lib';
+
+    use Shlomif::Spelling::Iface;
+
+    Shlomif::Spelling::Iface->new->run;
+
+In t/html-spell-check.t :
+
+    #!/usr/bin/perl
+
+    use strict;
+    use warnings;
+
+    use Test::More tests => 1;
+
+    {
+        my $output = `./bin/spell-checker-iface 2>&1`;
+        chomp($output);
+
+        # TEST
+        is ($output, '', "No spelling errors.");
+    }
 
 =head1 DESCRIPTION
 
