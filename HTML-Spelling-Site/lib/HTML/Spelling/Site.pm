@@ -16,9 +16,9 @@ HTML site.
 
 =head1 SYNOPSIS
 
-B<TODO: FILL IN>
+See L<HTML::Spelling::Site::Checker> .
 
-For now, see the example code on L<https://bitbucket.org/shlomif/shlomi-fish-homepage> .
+And also see the example code on L<https://bitbucket.org/shlomif/shlomi-fish-homepage> .
 
 =head1 DESCRIPTION
 
