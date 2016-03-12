@@ -5,6 +5,8 @@ use warnings;
 use autodie;
 use utf8;
 
+use 5.014;
+
 use MooX qw/late/;
 
 use HTML::Parser 3.00 ();

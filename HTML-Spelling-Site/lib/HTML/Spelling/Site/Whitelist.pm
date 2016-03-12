@@ -4,6 +4,8 @@ use strict;
 use warnings;
 use autodie;
 
+use 5.014;
+
 use MooX (qw( late ));
 
 use IO::All qw/ io /;

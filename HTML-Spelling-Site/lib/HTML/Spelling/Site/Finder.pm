@@ -3,6 +3,8 @@ package HTML::Spelling::Site::Finder;
 use strict;
 use warnings;
 
+use 5.014;
+
 use MooX (qw( late ));
 
 use File::Find::Object;
