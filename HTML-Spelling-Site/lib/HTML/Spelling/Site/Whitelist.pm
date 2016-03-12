@@ -272,9 +272,29 @@ Returns the filename.
 
 =head1 WHITELIST FORMAT
 
-B<TODO:> Document. For now, see:
+The format of the whitelist file is:
+
+    ==== GLOBAL:
+
+    [Global whitelist with one word per line]
+
+    ==== In: path1 , path2 , path3
+
+    [one word per line whitelist for path1, path2 and path3]
+
+    ==== In: path4
+
+    [one word per line whitelist for path4]
+
+(B<NOTE> that the paths are a complete path to the file and not parsed for
+wildcards or regular expression syntax.)
+
+Here's another example:
 
 L<https://bitbucket.org/shlomif/shlomi-fish-homepage/src/493302cc5f1d81584f6f21bbd64197048e185aa6/lib/hunspell/whitelist1.txt?at=default&fileviewer=file-view-default>
+
+You should keep the whitelist file canonicalised and sorted by using
+write_sorted_file() and is_sorted() .
 
 =cut
 
