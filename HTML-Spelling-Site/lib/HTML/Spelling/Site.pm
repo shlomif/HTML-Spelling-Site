@@ -27,4 +27,11 @@ duplicate functionality for spell checking my web-sites. Currently
 documentation is somewhat lacking and the modules could use some extra
 automated tests, but I'm anxious to get something out the door.
 
+=head1 SEE ALSO
+
+L<Test::HTML::Spelling> - possibly somewhat less generic than
+HTML::Spelling::Site and can also only handle one file at the time. Note that
+I contributed a little to it, but only after I started working on the code
+that became this framework.
+
 =cut
