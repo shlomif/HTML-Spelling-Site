@@ -110,6 +110,8 @@ sub test
     $self->obj->obj->test_spelling({ files => $self->files, blurb => $blurb});
 }
 
+package main;
+
 1;
 
 use strict;
