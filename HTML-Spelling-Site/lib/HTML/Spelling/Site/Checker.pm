@@ -28,9 +28,11 @@ sub _tag
     return;
 }
 
-sub spell_check
+sub _calc_mispellings
 {
     my ($self, $args) = @_;
+
+    my @ret;
 
     my $filenames = $args->{files};
 
@@ -135,13 +137,12 @@ sub spell_check
                 if ($mispelling_found)
                 {
                     $file_is_ok = 0;
-                    printf {*STDOUT}
-                    (
-                        "%s:%d:%s\n",
-                        $filename,
-                        1,
-                        $l
-                    );
+                    push @ret,
+                        {
+                            filename => $filename,
+                            line_num => 1,
+                            line_with_context => $l,
+                        };
                 }
             }
         };
@@ -166,11 +167,43 @@ sub spell_check
 
     $write_cache->($timestamp_cache);
 
-    print "\n";
-
-    return;
+    return { misspellings => \@ret, };
 }
 
+sub spell_check
+{
+    my ($self, $args) = @_;
+
+    my $misspellings = $self->_calc_mispellings($args);
+
+    foreach my $error (@{$misspellings->{misspellings}})
+    {
+        printf {*STDOUT}
+        (
+            "%s:%d:%s\n",
+            $error->{filename},
+            $error->{line_num},
+            $error->{line_with_context},
+        );
+    }
+
+    print "\n";
+}
+
+sub test_spelling
+{
+    my ($self, $args) = @_;
+
+    my $misspellings = $self->_calc_mispellings($args);
+
+    require Test::Differences;
+
+    return Test::Differences::eq_or_diff(
+        $misspellings->{misspellings},
+        [],
+        $args->{blurb},
+    );
+}
 1;
 
 __END__
@@ -180,6 +213,40 @@ __END__
 HTML::Spelling::Site::Checker - does the actual checking.
 
 =head1 SYNOPSIS
+
+In lib/Shlomif/Spelling/FindFiles.pm :
+
+    package Shlomif::Spelling::FindFiles;
+
+    use strict;
+    use warnings;
+
+    use MooX qw/late/;
+    use List::MoreUtils qw/any/;
+
+    use HTML::Spelling::Site::Finder;
+
+    my @prunes =
+    (
+        qr#^\Qdest/t2/humour/by-others/how-to-make-square-corners-with-CSS/#,
+    );
+
+    sub list_htmls
+    {
+        my ($self) = @_;
+
+        return HTML::Spelling::Site::Finder->new(
+            {
+                root_dir => 'dest/t2',
+                prune_cb => sub {
+                    my ($path) = @_;
+                    return any { $path =~ $_ } @prunes;
+                },
+            }
+        )->list_all_htmls;
+    }
+
+    1;
 
 In lib/Shlomif/Spelling/Whitelist.pm :
 
@@ -315,6 +382,10 @@ cache of the last-checked timestamps of the files is stored in JSON format.
 =head2 $finder->spell_check();
 
 Performs the spell check and prints the erroneous words to stdout.
+
+=head2 $finder->test_spelling({ files => [@files], blurb => $blurb, });
+
+A spell check function compatible with L<Test::More> . Emits one assertion.
 
 =head2 $finder->whitelist_parser()
 
