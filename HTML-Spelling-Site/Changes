@@ -1,5 +1,8 @@
 Revision history for HTML-Spelling-Site
 
+v0.0.5      Unknown
+    - Convert dist.ini to @SHLOMIF .
+
 v0.0.4      2016-03-23
     - Update the main synposis.
     - Add HTML::Spelling::Site::Checker->test_spelling()
