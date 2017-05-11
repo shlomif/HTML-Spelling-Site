@@ -102,7 +102,10 @@ sub parse
                 }
             }
         }
-        push @{$self->_records}, $rec;
+        if (defined $rec)
+        {
+            push @{$self->_records}, $rec;
+        }
         close ($fh);
 
         foreach my $w (@{$self->_general_whitelist})
@@ -165,15 +168,15 @@ sub get_sorted_text
     map { "$_\n" }
     (
         "==== GLOBAL:", '',
-        @{_sort_words($self->_general_whitelist)}, '',
+        @{_sort_words([keys %_gen])},
         (map
             { my %found;
-                ("==== In: ".join(' , ', @{$_->{files}})), '',
+                ('',("==== In: ".join(' , ', @{$_->{files}})), '',
                 (@{ _sort_words(
                             [grep { !exists($_gen{$_}) and !($found{$_}++)} @{$_->{words}}]
                     )
                   }
-                ), ''
+                ))
             }
             sort { _rec_sorter($a->{files}, $b->{files}, 0) }
             @{$self->_records}
