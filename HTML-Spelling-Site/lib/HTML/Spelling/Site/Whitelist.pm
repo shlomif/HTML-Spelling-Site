@@ -255,8 +255,6 @@ For now you should call this method right after the object is created.
 
 Checks if the word $word in the file $filename is in the whitelist.
 
-Performs the spell check and prints the erroneous words to stdout.
-
 =head2 $finder->write_sorted_file;
 
 Rewrites the file to be sorted and canonicalized.
