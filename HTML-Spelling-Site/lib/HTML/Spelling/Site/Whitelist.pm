@@ -10,23 +10,23 @@ use MooX (qw( late ));
 
 use IO::All qw/ io /;
 
-has '_general_whitelist' => (is => 'ro', default => sub { return []; });
-has '_records' => (is => 'ro', default => sub { return []; });
-has '_general_hashref' => (is => 'ro', default => sub { return +{}; });
-has '_per_file' => (is => 'ro', default => sub { return +{}; });
-has '_was_parsed' => (is => 'rw', default => '');
-has 'filename' => (is => 'ro', isa => 'Str', required => 1);
+has '_general_whitelist' => ( is => 'ro', default => sub { return []; } );
+has '_records'           => ( is => 'ro', default => sub { return []; } );
+has '_general_hashref' => ( is => 'ro', default => sub { return +{}; } );
+has '_per_file'        => ( is => 'ro', default => sub { return +{}; } );
+has '_was_parsed'      => ( is => 'rw', default => '' );
+has 'filename' => ( is => 'ro', isa => 'Str', required => 1 );
 
 sub check_word
 {
-    my ($self, $args) = @_;
+    my ( $self, $args ) = @_;
 
     my $filename = $args->{filename};
-    my $word = $args->{word};
+    my $word     = $args->{word};
 
-    return (exists( $self->_general_hashref->{$word} )
-            or
-        exists ($self->_per_file->{$filename}->{$word})
+    return (
+               exists( $self->_general_hashref->{$word} )
+            or exists( $self->_per_file->{$filename}->{$word} )
     );
 }
 
@@ -34,52 +34,55 @@ sub parse
 {
     my ($self) = @_;
 
-    if (!$self->_was_parsed())
+    if ( !$self->_was_parsed() )
     {
 
         my $rec;
         open my $fh, '<:encoding(utf8)', $self->filename;
         my $found_global = 0;
-        while (my $l = <$fh>)
+        while ( my $l = <$fh> )
         {
             chomp($l);
+
             # Whitespace or comment - skip.
-            if ($l !~ /\S/ or ($l =~ /\A\s*#/))
+            if ( $l !~ /\S/ or ( $l =~ /\A\s*#/ ) )
             {
                 # Do nothing.
             }
-            elsif ($l =~ s/\A====\s+//)
+            elsif ( $l =~ s/\A====\s+// )
             {
-                if ($l =~ /\AGLOBAL:\s*\z/)
+                if ( $l =~ /\AGLOBAL:\s*\z/ )
                 {
-                    if (defined($rec))
+                    if ( defined($rec) )
                     {
                         die "GLOBAL is not the first directive.";
                     }
                     $found_global = 1;
                 }
-                elsif ($l =~ /\AIn:\s*(.*)/)
+                elsif ( $l =~ /\AIn:\s*(.*)/ )
                 {
                     my @filenames = split /\s*,\s*/, $1;
 
-                    if (defined($rec))
+                    if ( defined($rec) )
                     {
-                        push @{$self->_records}, $rec;
+                        push @{ $self->_records }, $rec;
                     }
 
                     my %found;
                     foreach my $fn (@filenames)
                     {
-                        if (exists $found{$fn})
+                        if ( exists $found{$fn} )
                         {
-                            die "Filename <<$fn>> appears twice in line <<=== In: $l>>";
+                            die
+"Filename <<$fn>> appears twice in line <<=== In: $l>>";
                         }
                         $found{$fn} = 1;
                     }
                     $rec = {
-                        'files' => [ sort { $a cmp $b } @filenames],
+                        'files' => [ sort { $a cmp $b } @filenames ],
                         'words' => [],
-                    },
+                        },
+                        ;
                 }
                 else
                 {
@@ -88,41 +91,40 @@ sub parse
             }
             else
             {
-                if (defined($rec))
+                if ( defined($rec) )
                 {
-                    push @{$rec->{'words'}}, $l;
+                    push @{ $rec->{'words'} }, $l;
                 }
                 else
                 {
-                    if (!$found_global)
+                    if ( !$found_global )
                     {
                         die "GLOBAL not found before first word.";
                     }
-                    push @{$self->_general_whitelist}, $l;
+                    push @{ $self->_general_whitelist }, $l;
                 }
             }
         }
-        if (defined $rec)
+        if ( defined $rec )
         {
-            push @{$self->_records}, $rec;
+            push @{ $self->_records }, $rec;
         }
-        close ($fh);
+        close($fh);
 
-        foreach my $w (@{$self->_general_whitelist})
+        foreach my $w ( @{ $self->_general_whitelist } )
         {
             $self->_general_hashref->{$w} = 1;
         }
 
-        foreach my $rec (@{$self->_records})
+        foreach my $rec ( @{ $self->_records } )
         {
             my @lists;
-            foreach my $fn (@{$rec->{files}})
+            foreach my $fn ( @{ $rec->{files} } )
             {
-                push @lists,
-                ($self->_per_file->{$fn} //= +{});
+                push @lists, ( $self->_per_file->{$fn} //= +{} );
             }
 
-            foreach my $w (@{$rec->{words}})
+            foreach my $w ( @{ $rec->{words} } )
             {
                 foreach my $l (@lists)
                 {
@@ -138,14 +140,13 @@ sub parse
 
 sub _rec_sorter
 {
-    my ($a_aref, $b_aref, $idx) = @_;
+    my ( $a_aref, $b_aref, $idx ) = @_;
 
     return (
-        (@$a_aref == $idx) ? -1
-        : (@$b_aref == $idx) ? 1
-        : (($a_aref->[$idx] cmp $b_aref->[$idx])
-        ||
-        _rec_sorter($a_aref, $b_aref, $idx+1))
+          ( @$a_aref == $idx ) ? -1
+        : ( @$b_aref == $idx ) ? 1
+        : ( ( $a_aref->[$idx] cmp $b_aref->[$idx] )
+                || _rec_sorter( $a_aref, $b_aref, $idx + 1 ) )
     );
 }
 
@@ -153,7 +154,7 @@ sub _sort_words
 {
     my $words_aref = shift;
 
-    return [sort { $a cmp $b } @$words_aref];
+    return [ sort { $a cmp $b } @$words_aref ];
 }
 
 sub get_sorted_text
@@ -162,24 +163,35 @@ sub get_sorted_text
 
     $self->parse;
 
-    my %_gen = map { $_ => 1 } @{$self->_general_whitelist};
+    my %_gen = map { $_ => 1 } @{ $self->_general_whitelist };
 
-    return join '',
-    map { "$_\n" }
-    (
-        "==== GLOBAL:", '',
-        @{_sort_words([keys %_gen])},
-        (map
-            { my %found;
-                ('',("==== In: ".join(' , ', @{$_->{files}})), '',
-                (@{ _sort_words(
-                            [grep { !exists($_gen{$_}) and !($found{$_}++)} @{$_->{words}}]
+    return join '', map { "$_\n" } (
+        "==== GLOBAL:",
+        '',
+        @{ _sort_words( [ keys %_gen ] ) },
+        (
+            map {
+                my %found;
+                (
+                    '',
+                    ( "==== In: " . join( ' , ', @{ $_->{files} } ) ),
+                    '',
+                    (
+                        @{
+                            _sort_words(
+                                [
+                                    grep {
+                                                !exists( $_gen{$_} )
+                                            and !( $found{$_}++ )
+                                    } @{ $_->{words} }
+                                ]
+                            )
+                        }
                     )
-                  }
-                ))
-            }
-            sort { _rec_sorter($a->{files}, $b->{files}, 0) }
-            @{$self->_records}
+                    )
+                }
+                sort { _rec_sorter( $a->{files}, $b->{files}, 0 ) }
+                @{ $self->_records }
         )
     );
 }
@@ -188,7 +200,7 @@ sub _get_io
 {
     my ($self) = @_;
 
-    return io->encoding('utf8')->file($self->filename);
+    return io->encoding('utf8')->file( $self->filename );
 }
 
 sub is_sorted
@@ -197,7 +209,7 @@ sub is_sorted
 
     $self->parse;
 
-    return ($self->_get_io->all eq $self->get_sorted_text);
+    return ( $self->_get_io->all eq $self->get_sorted_text );
 }
 
 sub write_sorted_file
@@ -206,7 +218,7 @@ sub write_sorted_file
 
     $self->parse;
 
-    $self->_get_io->print($self->get_sorted_text);
+    $self->_get_io->print( $self->get_sorted_text );
 
     return;
 }

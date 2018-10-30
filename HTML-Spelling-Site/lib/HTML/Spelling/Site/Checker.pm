@@ -14,14 +14,15 @@ use List::MoreUtils qw(any);
 use JSON::MaybeXS qw(decode_json);
 use IO::All qw/ io /;
 
-has '_inside' => (is => 'rw', isa => 'HashRef', default => sub { return +{};});
-has 'whitelist_parser' => (is => 'ro', required => 1);
-has 'check_word_cb' => (is => 'ro', isa => 'CodeRef', required => 1);
-has 'timestamp_cache_fn' => (is => 'ro', isa => 'Str', required => 1);
+has '_inside' =>
+    ( is => 'rw', isa => 'HashRef', default => sub { return +{}; } );
+has 'whitelist_parser' => ( is => 'ro', required => 1 );
+has 'check_word_cb' => ( is => 'ro', isa => 'CodeRef', required => 1 );
+has 'timestamp_cache_fn' => ( is => 'ro', isa => 'Str', required => 1 );
 
 sub _tag
 {
-    my ($self, $tag, $num) = @_;
+    my ( $self, $tag, $num ) = @_;
 
     $self->_inside->{$tag} += $num;
 
@@ -30,7 +31,7 @@ sub _tag
 
 sub _calc_mispellings
 {
-    my ($self, $args) = @_;
+    my ( $self, $args ) = @_;
 
     my @ret;
 
@@ -42,19 +43,18 @@ sub _calc_mispellings
     binmode STDOUT, ":encoding(utf8)";
 
     my $calc_cache_io = sub {
-        return io->file($self->timestamp_cache_fn);
+        return io->file( $self->timestamp_cache_fn );
     };
 
-    my $app_key = 'HTML-Spelling-Site';
+    my $app_key  = 'HTML-Spelling-Site';
     my $data_key = 'timestamp_cache';
 
     my $write_cache = sub {
         my $ref = shift;
         $calc_cache_io->()->print(
-            JSON::MaybeXS->new(canonical => 1)->encode(
+            JSON::MaybeXS->new( canonical => 1 )->encode(
                 {
-                    $app_key =>
-                    {
+                    $app_key => {
                         $data_key => $ref,
                     },
                 },
@@ -64,32 +64,37 @@ sub _calc_mispellings
         return;
     };
 
-    if (! $calc_cache_io->()->exists())
+    if ( !$calc_cache_io->()->exists() )
     {
-        $write_cache->(+{});
+        $write_cache->( +{} );
     }
 
-    my $timestamp_cache = decode_json(scalar($calc_cache_io->()->slurp()))->{$app_key}->{$data_key};
+    my $timestamp_cache =
+        decode_json( scalar( $calc_cache_io->()->slurp() ) )->{$app_key}
+        ->{$data_key};
 
     my $check_word = $self->check_word_cb;
 
-    FILENAMES_LOOP:
+FILENAMES_LOOP:
     foreach my $filename (@$filenames)
     {
-        if (exists($timestamp_cache->{$filename}) and
-            $timestamp_cache->{$filename} >= (io->file($filename)->mtime())
-        )
+        if ( exists( $timestamp_cache->{$filename} )
+            and $timestamp_cache->{$filename} >=
+            ( io->file($filename)->mtime() ) )
         {
             next FILENAMES_LOOP;
         }
 
         my $file_is_ok = 1;
 
-        my $process_text = sub
-        {
-            if (any {
-                    exists($self->_inside->{$_}) and $self->_inside->{$_} > 0
-                } qw(script style))
+        my $process_text = sub {
+            if (
+                any
+                {
+                    exists( $self->_inside->{$_} ) and $self->_inside->{$_} > 0
+                }
+                qw(script style)
+                )
             {
                 return;
             }
@@ -108,19 +113,21 @@ sub _calc_mispellings
 
                     $word =~ s{’(ve|s|m|d|t|ll|re)\z}{'$1};
                     $word =~ s{[’']\z}{};
-                    if ($word =~ /[A-Za-z]/)
+                    if ( $word =~ /[A-Za-z]/ )
                     {
-                        $word =~ s{\A(?:(?:ֹו?(?:ש|ל|מ|ב|כש|לכש|מה|שה|לכשה|ב-))|ו)-?}{};
+                        $word =~
+s{\A(?:(?:ֹו?(?:ש|ל|מ|ב|כש|לכש|מה|שה|לכשה|ב-))|ו)-?}{};
                         $word =~ s{'?ים\z}{};
                     }
 
-                    my $verdict =
-                    (
-                        (! $whitelist->check_word({filename => $filename, word => $word}))
-                        &&
-                        ($word !~ m#\A[\p{Hebrew}\-'’]+\z#)
-                        &&
-                        (!($check_word->($word)))
+                    my $verdict = (
+                        (
+                            !$whitelist->check_word(
+                                { filename => $filename, word => $word }
+                            )
+                        )
+                            && ( $word !~ m#\A[\p{Hebrew}\-'’]+\z# )
+                            && ( !( $check_word->($word) ) )
                     );
 
                     $mispelling_found ||= $verdict;
@@ -139,25 +146,27 @@ sub _calc_mispellings
                     $file_is_ok = 0;
                     push @ret,
                         {
-                            filename => $filename,
-                            line_num => 1,
-                            line_with_context => $l,
+                        filename          => $filename,
+                        line_num          => 1,
+                        line_with_context => $l,
                         };
                 }
             }
         };
 
-        open(my $fh, "<:utf8", $filename);
+        open( my $fh, "<:utf8", $filename );
 
-        HTML::Parser->new(api_version => 3,
-            handlers    => [start => [sub { return $self->_tag(@_); }, "tagname, '+1'"],
-                end   => [sub { return $self->_tag(@_); }, "tagname, '-1'"],
-                text  => [$process_text, "dtext"],
+        HTML::Parser->new(
+            api_version => 3,
+            handlers    => [
+                start => [ sub { return $self->_tag(@_); }, "tagname, '+1'" ],
+                end   => [ sub { return $self->_tag(@_); }, "tagname, '-1'" ],
+                text => [ $process_text, "dtext" ],
             ],
             marked_sections => 1,
         )->parse_file($fh);
 
-        close ($fh);
+        close($fh);
 
         if ($file_is_ok)
         {
@@ -172,25 +181,20 @@ sub _calc_mispellings
 
 sub _format_error
 {
-    my ($self, $error) = @_;
+    my ( $self, $error ) = @_;
 
-    return
-        sprintf
-        (
-            "%s:%d:%s",
-            $error->{filename},
-            $error->{line_num},
-            $error->{line_with_context},
-        );
+    return sprintf( "%s:%d:%s",
+        $error->{filename}, $error->{line_num}, $error->{line_with_context},
+    );
 }
 
 sub spell_check
 {
-    my ($self, $args) = @_;
+    my ( $self, $args ) = @_;
 
     my $misspellings = $self->_calc_mispellings($args);
 
-    foreach my $error (@{$misspellings->{misspellings}})
+    foreach my $error ( @{ $misspellings->{misspellings} } )
     {
         printf {*STDOUT} "%s\n", $self->_format_error($error);
     }
@@ -200,33 +204,27 @@ sub spell_check
 
 sub test_spelling
 {
-    my ($self, $args) = @_;
+    my ( $self, $args ) = @_;
 
     my $misspellings = $self->_calc_mispellings($args);
 
-    if ($args->{light})
+    if ( $args->{light} )
     {
         require Test::More;
 
-        my $ret = Test::More::is(
-            scalar(@{$misspellings->{misspellings}}),
-            0,
-            $args->{blurb}
-        );
+        my $ret = Test::More::is( scalar( @{ $misspellings->{misspellings} } ),
+            0, $args->{blurb} );
 
-        foreach my $error (@{$misspellings->{misspellings}})
+        foreach my $error ( @{ $misspellings->{misspellings} } )
         {
-            Test::More::diag($self->_format_error($error));
+            Test::More::diag( $self->_format_error($error) );
         }
         return $ret;
     }
     require Test::Differences;
 
-    return Test::Differences::eq_or_diff(
-        $misspellings->{misspellings},
-        [],
-        $args->{blurb},
-    );
+    return Test::Differences::eq_or_diff( $misspellings->{misspellings},
+        [], $args->{blurb}, );
 }
 1;
 
