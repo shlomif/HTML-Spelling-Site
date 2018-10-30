@@ -1,6 +1,6 @@
 Revision history for HTML-Spelling-Site
 
-v0.2.0      2018-10-30
+0.2.0      2018-10-30
     - Add the light => 1 flag to lib/HTML/Spelling/Site/Checker.pm .
 
 v0.0.5      2017-05-11
