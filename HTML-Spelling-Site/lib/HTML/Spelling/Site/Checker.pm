@@ -170,6 +170,20 @@ sub _calc_mispellings
     return { misspellings => \@ret, };
 }
 
+sub _format_error
+{
+    my ($self, $error) = @_;
+
+    return
+        sprintf
+        (
+            "%s:%d:%s",
+            $error->{filename},
+            $error->{line_num},
+            $error->{line_with_context},
+        );
+}
+
 sub spell_check
 {
     my ($self, $args) = @_;
@@ -178,13 +192,7 @@ sub spell_check
 
     foreach my $error (@{$misspellings->{misspellings}})
     {
-        printf {*STDOUT}
-        (
-            "%s:%d:%s\n",
-            $error->{filename},
-            $error->{line_num},
-            $error->{line_with_context},
-        );
+        printf {*STDOUT} "%s\n", $self->_format_error($error);
     }
 
     print "\n";
@@ -196,6 +204,22 @@ sub test_spelling
 
     my $misspellings = $self->_calc_mispellings($args);
 
+    if ($args->{light})
+    {
+        require Test::More;
+
+        my $ret = Test::More::is(
+            scalar(@{$misspellings->{misspellings}}),
+            0,
+            $args->{blurb}
+        );
+
+        foreach my $error (@{$misspellings->{misspellings}})
+        {
+            Test::More::diag($self->_format_error($error));
+        }
+        return $ret;
+    }
     require Test::Differences;
 
     return Test::Differences::eq_or_diff(
@@ -386,6 +410,10 @@ Performs the spell check and prints the erroneous words to stdout.
 =head2 $finder->test_spelling({ files => [@files], blurb => $blurb, });
 
 A spell check function compatible with L<Test::More> . Emits one assertion.
+
+If a C<<< light => 1 >>> key is specified and is true, it will not use
+L<Test::Differences>, which tends to consume a lot of RAM when there are
+many messages.
 
 =head2 $finder->whitelist_parser()
 
