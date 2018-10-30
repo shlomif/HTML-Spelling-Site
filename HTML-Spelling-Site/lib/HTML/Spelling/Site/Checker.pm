@@ -409,9 +409,9 @@ Performs the spell check and prints the erroneous words to stdout.
 
 A spell check function compatible with L<Test::More> . Emits one assertion.
 
-If a C<<< light => 1 >>> key is specified and is true, it will not use
-L<Test::Differences>, which tends to consume a lot of RAM when there are
-many messages.
+Since version 0.2.0, if a C<<< light => 1 >>> key is specified and is true, it
+will not use L<Test::Differences>, which tends to consume a lot of RAM when
+there are many messages.
 
 =head2 $finder->whitelist_parser()
 
