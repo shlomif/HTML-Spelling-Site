@@ -8,6 +8,10 @@ cache:
         - $HOME/tidyall_d
 
 sudo: false
+addons:
+    apt:
+        packages:
+            - libhunspell-dev
 language: perl
 perl:
     - 'blead'
