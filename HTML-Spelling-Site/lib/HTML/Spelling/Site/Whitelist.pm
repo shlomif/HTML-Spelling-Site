@@ -188,7 +188,7 @@ sub get_sorted_text
                             )
                         }
                     )
-                    )
+                )
                 }
                 sort { _rec_sorter( $a->{files}, $b->{files}, 0 ) }
                 @{ $self->_records }
