@@ -160,7 +160,7 @@ s{\A(?:(?:ֹו?(?:ש|ל|מ|ב|כש|לכש|מה|שה|לכשה|ב-))|ו)-?}{};
             }
         };
 
-        open( my $fh, "<:utf8", $filename );
+        open( my $fh, "<:encoding(UTF-8)", $filename );
 
         HTML::Parser->new(
             api_version => 3,
