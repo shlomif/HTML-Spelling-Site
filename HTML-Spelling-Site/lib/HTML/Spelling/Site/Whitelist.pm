@@ -12,10 +12,10 @@ use IO::All qw/ io /;
 
 has '_general_whitelist' => ( is => 'ro', default => sub { return []; } );
 has '_records'           => ( is => 'ro', default => sub { return []; } );
-has '_general_hashref' => ( is => 'ro', default => sub { return +{}; } );
-has '_per_file'        => ( is => 'ro', default => sub { return +{}; } );
-has '_was_parsed'      => ( is => 'rw', default => '' );
-has 'filename' => ( is => 'ro', isa => 'Str', required => 1 );
+has '_general_hashref'   => ( is => 'ro', default => sub { return +{}; } );
+has '_per_file'          => ( is => 'ro', default => sub { return +{}; } );
+has '_was_parsed'        => ( is => 'rw', default => '' );
+has 'filename'           => ( is => 'ro', isa     => 'Str', required => 1 );
 
 sub check_word
 {

@@ -167,7 +167,7 @@ s{\A(?:(?:ֹו?(?:ש|ל|מ|ב|כש|לכש|מה|שה|לכשה|ב-))|ו)-?}{};
             handlers    => [
                 start => [ sub { return $self->_tag(@_); }, "tagname, '+1'" ],
                 end   => [ sub { return $self->_tag(@_); }, "tagname, '-1'" ],
-                text => [ $process_text, "dtext" ],
+                text  => [ $process_text,                   "dtext" ],
             ],
             marked_sections => 1,
         )->parse_file($fh);
