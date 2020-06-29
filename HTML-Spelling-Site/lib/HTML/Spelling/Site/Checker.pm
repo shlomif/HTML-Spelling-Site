@@ -13,6 +13,7 @@ use HTML::Parser 3.00 ();
 use List::MoreUtils qw(any);
 use JSON::MaybeXS qw(decode_json);
 use Path::Tiny qw/ path /;
+use Digest ();
 
 sub _mtime
 {
@@ -55,16 +56,20 @@ sub _calc_mispellings
 
     my $cache_fh = path( $self->timestamp_cache_fn );
 
-    my $app_key  = 'HTML-Spelling-Site';
-    my $data_key = 'timestamp_cache';
+    my $app_key     = 'HTML-Spelling-Site';
+    my $data_key    = 'timestamp_cache';
+    my $DIGEST_NAME = 'SHA-256';
+    my $digest_key  = 'digest_cache';
+    my $digest      = Digest->new($DIGEST_NAME);
 
     my $write_cache = sub {
-        my $ref = shift;
+        my ( $ref, $ddata ) = @_;
         $cache_fh->spew_raw(
             JSON::MaybeXS->new( canonical => 1 )->encode(
                 {
                     $app_key => {
-                        $data_key => $ref,
+                        $data_key   => $ref,
+                        $digest_key => { $DIGEST_NAME => $ddata, },
                     },
                 },
             )
@@ -75,12 +80,13 @@ sub _calc_mispellings
 
     if ( !$cache_fh->exists() )
     {
-        $write_cache->( +{} );
+        $write_cache->( +{}, +{} );
     }
 
-    my $timestamp_cache =
-        decode_json( scalar( $cache_fh->slurp_raw() ) )->{$app_key}
-        ->{$data_key};
+    my $main_json       = decode_json( scalar( $cache_fh->slurp_raw() ) );
+    my $timestamp_cache = $main_json->{$app_key}->{$data_key};
+    my $digest_cache =
+        ( $main_json->{$app_key}->{$digest_key}->{$DIGEST_NAME} // +{} );
 
     my $check_word = $self->check_word_cb;
 
@@ -90,6 +96,15 @@ FILENAMES_LOOP:
         if ( exists( $timestamp_cache->{$filename} )
             and $timestamp_cache->{$filename} >= ( _mtime($filename) ) )
         {
+            next FILENAMES_LOOP;
+        }
+        my $d =
+            $digest->clone()->addfile( path($filename)->openr_raw )->b64digest;
+        if ( exists( $digest_cache->{$filename} )
+            and $digest_cache->{$filename} eq $d )
+        {
+            $timestamp_cache->{$filename} = ( _mtime($filename) );
+
             next FILENAMES_LOOP;
         }
 
@@ -179,10 +194,11 @@ s{\A(?:(?:ֹו?(?:ש|ל|מ|ב|כש|לכש|מה|שה|לכשה|ב-))|ו)-?}{};
         if ($file_is_ok)
         {
             $timestamp_cache->{$filename} = _mtime($filename);
+            $digest_cache->{$filename}    = $d;
         }
     }
 
-    $write_cache->($timestamp_cache);
+    $write_cache->( $timestamp_cache, $digest_cache );
 
     return { misspellings => \@ret, };
 }
