@@ -15,11 +15,6 @@ use JSON::MaybeXS qw(decode_json);
 use Path::Tiny qw/ path /;
 use Digest ();
 
-sub _mtime
-{
-    return path( shift(@_) )->stat->mtime;
-}
-
 has '_inside' =>
     ( is => 'rw', isa => 'HashRef', default => sub { return +{}; } );
 has 'whitelist_parser' => ( is => 'ro', required => 1 );
@@ -93,17 +88,18 @@ sub _calc_mispellings
 FILENAMES_LOOP:
     foreach my $filename (@$filenames)
     {
+        my $fp    = path($filename);
+        my $mtime = $fp->stat->mtime;
         if ( exists( $timestamp_cache->{$filename} )
-            and $timestamp_cache->{$filename} >= ( _mtime($filename) ) )
+            and $timestamp_cache->{$filename} >= $mtime )
         {
             next FILENAMES_LOOP;
         }
-        my $d =
-            $digest->clone()->addfile( path($filename)->openr_raw )->b64digest;
+        my $d = $digest->clone()->addfile( $fp->openr_raw )->b64digest;
         if ( exists( $digest_cache->{$filename} )
             and $digest_cache->{$filename} eq $d )
         {
-            $timestamp_cache->{$filename} = ( _mtime($filename) );
+            $timestamp_cache->{$filename} = $mtime;
 
             next FILENAMES_LOOP;
         }
@@ -177,8 +173,6 @@ s{\A(?:(?:ֹו?(?:ש|ל|מ|ב|כש|לכש|מה|שה|לכשה|ב-))|ו)-?}{};
             }
         };
 
-        open( my $fh, "<:encoding(UTF-8)", $filename );
-
         HTML::Parser->new(
             api_version => 3,
             handlers    => [
@@ -187,13 +181,11 @@ s{\A(?:(?:ֹו?(?:ש|ל|מ|ב|כש|לכש|מה|שה|לכשה|ב-))|ו)-?}{};
                 text  => [ $process_text,                   "dtext" ],
             ],
             marked_sections => 1,
-        )->parse_file($fh);
-
-        close($fh);
+        )->parse_file( $fp->openr_utf8() );
 
         if ($file_is_ok)
         {
-            $timestamp_cache->{$filename} = _mtime($filename);
+            $timestamp_cache->{$filename} = $mtime;
             $digest_cache->{$filename}    = $d;
         }
     }
