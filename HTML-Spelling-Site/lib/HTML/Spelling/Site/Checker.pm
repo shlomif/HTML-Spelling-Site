@@ -12,7 +12,12 @@ use MooX qw/late/;
 use HTML::Parser 3.00 ();
 use List::MoreUtils qw(any);
 use JSON::MaybeXS qw(decode_json);
-use IO::All qw/ io /;
+use Path::Tiny qw/ path /;
+
+sub _mtime
+{
+    return path( shift(@_) )->stat->mtime;
+}
 
 has '_inside' =>
     ( is => 'rw', isa => 'HashRef', default => sub { return +{}; } );
@@ -48,16 +53,14 @@ sub _calc_mispellings
 
     binmode STDOUT, ":encoding(utf8)";
 
-    my $calc_cache_io = sub {
-        return io->file( $self->timestamp_cache_fn );
-    };
+    my $cache_fh = path( $self->timestamp_cache_fn );
 
     my $app_key  = 'HTML-Spelling-Site';
     my $data_key = 'timestamp_cache';
 
     my $write_cache = sub {
         my $ref = shift;
-        $calc_cache_io->()->print(
+        $cache_fh->spew_raw(
             JSON::MaybeXS->new( canonical => 1 )->encode(
                 {
                     $app_key => {
@@ -70,13 +73,13 @@ sub _calc_mispellings
         return;
     };
 
-    if ( !$calc_cache_io->()->exists() )
+    if ( !$cache_fh->exists() )
     {
         $write_cache->( +{} );
     }
 
     my $timestamp_cache =
-        decode_json( scalar( $calc_cache_io->()->slurp() ) )->{$app_key}
+        decode_json( scalar( $cache_fh->slurp_raw() ) )->{$app_key}
         ->{$data_key};
 
     my $check_word = $self->check_word_cb;
@@ -85,8 +88,7 @@ FILENAMES_LOOP:
     foreach my $filename (@$filenames)
     {
         if ( exists( $timestamp_cache->{$filename} )
-            and $timestamp_cache->{$filename} >=
-            ( io->file($filename)->mtime() ) )
+            and $timestamp_cache->{$filename} >= ( _mtime($filename) ) )
         {
             next FILENAMES_LOOP;
         }
@@ -176,7 +178,7 @@ s{\A(?:(?:ֹו?(?:ש|ל|מ|ב|כש|לכש|מה|שה|לכשה|ב-))|ו)-?}{};
 
         if ($file_is_ok)
         {
-            $timestamp_cache->{$filename} = io->file($filename)->mtime();
+            $timestamp_cache->{$filename} = _mtime($filename);
         }
     }
 
