@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 2;
+use Test::More tests => 3;
 use HTML::Spelling::Site::Whitelist ();
 
 {
@@ -36,5 +36,36 @@ EOF
         ),
         0,
         "Comparator returns 0 upon tie.",
+    );
+}
+
+{
+    my $obj = HTML::Spelling::Site::Whitelist->new(
+        {
+            filename => './t/data/whitelist-with-dup-records.txt',
+        }
+    );
+
+    # TEST
+    is_deeply(
+        $obj->get_sorted_text,
+        <<'EOF',
+==== GLOBAL:
+
+Shlomi
+Yonathan
+
+==== In: dest/a.html , dest/b.html
+
+worde
+
+==== In: dest/a.html , dest/b.html , dest/c.html
+
+worda
+wordb
+wordc
+wordd
+EOF
+        'Duplicates are removed',
     );
 }
