@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 1;
+use Test::More tests => 2;
 use HTML::Spelling::Site::Whitelist ();
 
 {
@@ -26,3 +26,15 @@ EOF
     );
 }
 
+{
+    # TEST
+    is(
+        scalar(
+            HTML::Spelling::Site::Whitelist::_rec_sorter(
+                [qw# a/b.html a/c.html #], [qw# a/b.html a/c.html #], 0,
+            )
+        ),
+        0,
+        "Comparator returns 0 upon tie.",
+    );
+}

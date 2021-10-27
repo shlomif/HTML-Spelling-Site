@@ -143,7 +143,7 @@ sub _rec_sorter
     my ( $a_aref, $b_aref, $idx ) = @_;
 
     return (
-          ( @$a_aref == $idx ) ? -1
+          ( @$a_aref == $idx ) ? ( ( @$a_aref == @$b_aref ) ? 0 : -1 )
         : ( @$b_aref == $idx ) ? 1
         : ( ( $a_aref->[$idx] cmp $b_aref->[$idx] )
                 || _rec_sorter( $a_aref, $b_aref, $idx + 1 ) )
