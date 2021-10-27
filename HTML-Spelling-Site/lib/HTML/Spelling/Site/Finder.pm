@@ -7,10 +7,10 @@ use 5.014;
 
 use MooX (qw( late ));
 
-use File::Find::Object;
+use File::Find::Object ();
 
 has 'prune_cb' => ( is => 'ro', isa => 'CodeRef', default => sub { return; } );
-has 'root_dir' => ( is => 'ro', isa => 'Str', 'required' => 1, );
+has 'root_dir' => ( is => 'ro', isa => 'Str',     'required' => 1, );
 
 sub list_all_htmls
 {

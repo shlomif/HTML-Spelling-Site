@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Test::More tests => 1;
-use HTML::Spelling::Site::Whitelist;
+use HTML::Spelling::Site::Whitelist ();
 
 {
     my $obj = HTML::Spelling::Site::Whitelist->new(
