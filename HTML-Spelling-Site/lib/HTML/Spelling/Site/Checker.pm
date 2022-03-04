@@ -248,7 +248,10 @@ sub test_spelling
     }
     require Test::Differences;
     my @arr = @{ $misspellings->{misspellings} };
-    splice( @arr, 0, $MAXSIZE );
+    if ( @arr > $MAXSIZE )
+    {
+        $#arr = $MAXSIZE - 1;
+    }
     return Test::Differences::eq_or_diff( ( \@arr ), [], $args->{blurb}, );
 }
 1;
