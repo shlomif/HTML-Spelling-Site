@@ -10,10 +10,10 @@ use 5.014;
 use MooX qw/late/;
 
 use HTML::Parser 3.00 ();
-use List::MoreUtils qw(any);
-use JSON::MaybeXS qw(decode_json);
-use Path::Tiny qw/ path /;
-use Digest ();
+use List::MoreUtils   qw(any);
+use JSON::MaybeXS     qw(decode_json);
+use Path::Tiny        qw/ path /;
+use Digest            ();
 
 has '_inside' =>
     ( is => 'rw', isa => 'HashRef', default => sub { return +{}; } );
@@ -59,6 +59,7 @@ sub _calc_mispellings
 
     my $write_cache = sub {
         my ( $ref, $ddata ) = @_;
+        $cache_fh->parent()->mkdir();
         $cache_fh->spew_raw(
             JSON::MaybeXS->new( canonical => 1 )->encode(
                 {
