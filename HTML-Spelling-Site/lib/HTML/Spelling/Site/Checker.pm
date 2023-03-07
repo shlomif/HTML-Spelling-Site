@@ -12,7 +12,7 @@ use MooX qw/late/;
 use HTML::Parser 3.00 ();
 use List::MoreUtils   qw(any);
 use JSON::MaybeXS     qw(decode_json);
-use Path::Tiny        qw/ path /;
+use Path::Tiny 0.144  qw/ path /;
 use Digest            ();
 
 has '_inside' =>
