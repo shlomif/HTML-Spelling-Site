@@ -18,7 +18,8 @@ HTML site.
 
 See L<HTML::Spelling::Site::Checker> .
 
-And also see the example code on L<https://bitbucket.org/shlomif/shlomi-fish-homepage> .
+And also see the example code on L<https://github.com/shlomif/shlomi-fish-homepage>
+and L<https://github.com/shlomif/perl-begin> .
 
 =head1 DESCRIPTION
 
